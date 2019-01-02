@@ -48,14 +48,14 @@
 					<button class="btn btn-primary toggle-order-search pull-right" type="button" data-toggle="collapse" data-target="#cust-quotes-search-div" aria-expanded="false" aria-controls="orders-search-div">Toggle Search <i class="fa fa-search" aria-hidden="true"></i></button>
 				</div>
 			</div>
-			<div id="cust-quotes-search-div" class="<?= (empty($quotepanel->filters)) ? 'collapse' : ''; ?>">
+			<div id="cust-quotes-search-div" class="<?= (empty($orderpanel->filters) || empty($input->get->filter)) ? 'collapse' : ''; ?>">
 				<?php include $config->paths->content.'customer/cust-page/quotes/search-form.php'; ?>
 			</div>
 		</div>
 		<div class="table-responsive">
 			<?php
-				if ($modules->isInstalled('QtyPerCase')) {
-					include $config->paths->siteModules.'QtyPerCase/content/customer/quotes/table.php';
+				if ($modules->isInstalled('CaseQtyBottle')) {
+					include $config->paths->siteModules.'CaseQtyBottle/content/customer/quotes/table.php';
 				} else {
 					include $config->paths->content.'customer/cust-page/quotes/table.php';
 				}
