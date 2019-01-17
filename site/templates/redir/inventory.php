@@ -1,10 +1,13 @@
 <?php
+	// Figure out page request method, then grab needed inputs
 	$requestmethod = $input->requestMethod('POST') ? 'post' : 'get';
 	$action = $input->$requestmethod->text('action');
-	$sessionID = !empty($input->$requestmethod->sessionID) ? $input->$requestmethod->text('sessionID') : session_id();
-	
+
+	// Set up filename and sessionID in case this was made through cURL
+	$filename = ($input->$requestmethod->sessionID) ? $input->$requestmethod->text('sessionID') : session_id();
+	$sessionID = ($input->$requestmethod->sessionID) ? $input->$requestmethod->text('sessionID') : session_id();
+
 	$session->fromredirect = $page->url;
-	$filename = $sessionID;
 	
 	/**
 	* INVENTORY REDIRECT
@@ -15,11 +18,14 @@
 	*
 	* switch ($action) {
 	*	case 'inventory-search:
+	*		- Requests for $q to be found in the inventory
+	*		NOTE $q can be itemID, lotnbr, serialnbr, UPC, Customer ItemID, Vendor ItemID
 	*		DBNAME=$config->dplusdbname
 	*		INVSEARCH
 	*		QUERY=$q
 	*		break;
 	*	case 'physical-count':
+	*		- Sends the # of units found for this item as bin location
 	*		DBNAME=$config->dplusdbname
 	*		ITEMTAG
 	*		ITEMID=$itemID
@@ -32,9 +38,11 @@
 	switch ($action) {
 		case 'inventory-search':
 			$q = $input->$requestmethod->text('scan');
+			$binID = $input->$requestmethod->text('binID');
 			$data = array("DBNAME=$config->dplusdbname", 'INVSEARCH', "QUERY=$q");
 			$url = new Purl\Url($input->$requestmethod->text('page'));
 			$url->query->set('scan', $q);
+			$url->query->set('binID', $binID);
 			$session->loc = $url->getUrl();
 			break;
 		case 'physical-count':
@@ -48,10 +56,8 @@
 			if (!empty($input->$requestmethod->serialnbr) | !empty($input->$requestmethod->lotnbr)) {
 				if ($input->$requestmethod->serialnbr) {
 					$lotserial = $input->$requestmethod->text('serialnbr');
-					$returnurl->query->set('serialnbr', $lotserial);
 				} elseif ($input->$requestmethod->lotnbr) {
 					$lotserial = $input->$requestmethod->text('lotnbr');
-					$returnurl->query->set('lotnbr', $lotserial);
 				}
 				$item = InventorySearchItem::load_from_lotserial(session_id(), $lotserial);
 			} else {
@@ -73,7 +79,21 @@
 			}
 			
 			$data[] = "QTY=$qty_total";
+			$returnurl->query->remove('lotnbr');
+			$returnurl->query->remove('serialnbr');
+			$returnurl->query->remove('itemID');
+			$returnurl->query->remove('itemid');
 			$session->loc = $returnurl->getUrl();
+			
+			$itemhistory = array('binID' => $binID, 'itemID' => $item->itemid, 'qty' => $qty_total);
+			
+			if ($session->physicalcounthistory) {
+				$history = json_decode($session->physicalcounthistory, true);
+			} else {
+				$history = array();
+			}
+			$history[$binID][$item->itemid] = $itemhistory;
+			$session->physicalcounthistory = json_encode($history);
 			break;
 	}
 	

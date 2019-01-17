@@ -2,14 +2,14 @@
 	use Dplus\Dpluso\OrderDisplays\QuotePanel;
 	use Dplus\Content\Paginator;
 
-	/**
-	*  QUOTE REDIRECT
-	* @param string $action
-	*
-	*/
-
+	// Figure out page request method, then grab needed inputs
 	$requestmethod = $input->requestMethod('POST') ? 'post' : 'get';
 	$action = $input->$requestmethod->text('action');
+
+	// Set up filename and sessionID in case this was made through cURL
+	$filename = ($input->$requestmethod->sessionID) ? $input->$requestmethod->text('sessionID') : session_id();
+	$sessionID = ($input->$requestmethod->sessionID) ? $input->$requestmethod->text('sessionID') : session_id();
+	$session->fromredirect = $page->url;
 
 	// USED FOR MAINLY ORDER LISTING FUNCTIONS
 	$pagenumber = (!empty($input->get->page) ? $input->get->int('page') : 1);
@@ -28,15 +28,16 @@
 	}
 
 	$linkaddon = $sortaddon . $filteraddon;
-	$session->{'from-redirect'} = $page->url;
 	$session->remove('quote-search');
+	$session->remove('panelorigin');
+	$session->remove('paneloriginpage');
 	$session->filters = $filteraddon;
 	$filename = session_id();
 
 	//TODO merge get-quote-details and get-quote-details-print
 	/**
 	*  QUOTE REDIRECT
-	*
+	* @param string $action
 	*
 	*
 	*
@@ -175,6 +176,13 @@
 			$custID = Quote::find_custid(session_id(), $qnbr, false);
 			$data = array('DBNAME' => $config->dplusdbname, 'EDITQUOTE' => false, 'QUOTENO' => $qnbr);
 			$session->loc= $config->pages->editquote."?qnbr=".$qnbr;
+			if ($input->get->quoteorigin) {
+				$session->panelorigin = 'quotes';
+				$session->paneloriginpage = $input->get->text('quoteorigin');
+				if ($input->get->custID) {
+					$session->panelcustomer = $input->get->text('custID');
+				}
+			}
 			break;
 		case 'edit-new-quote':
 			$qnbr = get_createdordn(session_id());
@@ -369,7 +377,6 @@
 			$qnbr = $input->get->text('qnbr');
 			$data = array('UNLOCKING QUOTE' => false);
 			$session->loc = $config->pages->edit."quote/confirm/?qnbr=".$qnbr.$linkaddon;
-			remove_orderlock($sessionID, $ordn, $userID, $debug);
 			break;
 		case 'send-quote-to-order':
 			$qnbr = $input->post->text('qnbr');

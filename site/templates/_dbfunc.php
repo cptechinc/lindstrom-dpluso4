@@ -301,7 +301,7 @@
 		$loginID = (!empty($loginID)) ? $loginID : DplusWire::wire('user')->loginid;
 		$user = LogmUser::load($loginID);
 
-		if ($user->get_dplusrole() == DplusWire::wire('config')->roles['sales-rep'] && DplusWire::wire('pages')->get('/config/')->restrict_allowedcustomers) {
+		if ($user->is_salesrep() && DplusWire::wire('pages')->get('/config/')->restrict_allowedcustomers) {
 			$custquery = (new QueryBuilder())->table('custperm')->where('custid', $custID);
 			if (!empty($shiptoID)) {
 				$custquery->where('shiptoid', $shiptoID );
@@ -390,7 +390,7 @@
 		$user = LogmUser::load($loginID);
 		$SHARED_ACCOUNTS = DplusWire::wire('config')->sharedaccounts;
 
-		if ($user->get_dplusrole() == DplusWire::wire('config')->roles['sales-rep'] && DplusWire::wire('pages')->get('/config/')->restrict_allowedcustomers) {
+		if ($user->is_salesrep() && DplusWire::wire('pages')->get('/config/')->restrict_allowedcustomers) {
 			$custquery = (new QueryBuilder())->table('custperm')->where('custid', $custID)->where('shiptoid', '!=', '');
 			$q = (new QueryBuilder())->table($custquery, 'custpermcust');
 			$q->where('loginid', [$loginID, $SHARED_ACCOUNTS]);
@@ -423,7 +423,7 @@
 		$SHARED_ACCOUNTS = DplusWire::wire('config')->sharedaccounts;
 		$q = (new QueryBuilder())->table('custindex');
 
-		if ($user->get_dplusrole() == DplusWire::wire('config')->roles['sales-rep'] && DplusWire::wire('pages')->get('/config/')->restrict_allowedcustomers) {
+		if ($user->is_salesrep() && DplusWire::wire('pages')->get('/config/')->restrict_allowedcustomers) {
 			$custquery = (new QueryBuilder())->table('custperm')->where('custid', $custID)->where('shiptoid', '!=', '');
 			$permquery = (new QueryBuilder())->table($custquery, 'custpermcust');
 			$permquery->field('custid, shiptoid');
@@ -486,7 +486,7 @@
 		$q = (new QueryBuilder())->table('custindex');
 		$q->field('COUNT(*)');
 
-		if ($user->get_dplusrole() == DplusWire::wire('config')->roles['sales-rep'] && DplusWire::wire('pages')->get('/config/')->restrict_allowedcustomers) {
+		if ($user->is_salesrep() && DplusWire::wire('pages')->get('/config/')->restrict_allowedcustomers) {
 			$custquery = (new QueryBuilder())->table('custperm')->where('custid', $custID);
 			$permquery = (new QueryBuilder())->table($custquery, 'custpermcust');
 			$permquery->field('custid, shiptoid');
@@ -520,7 +520,7 @@
 
 		$q = (new QueryBuilder())->table('custindex');
 
-		if ($user->get_dplusrole() == DplusWire::wire('config')->roles['sales-rep'] && DplusWire::wire('pages')->get('/config/')->restrict_allowedcustomers) {
+		if ($user->is_salesrep() && DplusWire::wire('pages')->get('/config/')->restrict_allowedcustomers) {
 			$custquery = (new QueryBuilder())->table('custperm')->where('custid', $custID);
 			$permquery = (new QueryBuilder())->table($custquery, 'custpermcust');
 			$permquery->field('custid, shiptoid');
@@ -555,7 +555,7 @@
 		$user = LogmUser::load($loginID);
 		$SHARED_ACCOUNTS = DplusWire::wire('config')->sharedaccounts;
 
-		if ($user->get_dplusrole() == DplusWire::wire('config')->roles['sales-rep'] && DplusWire::wire('pages')->get('/config/')->restrict_allowedcustomers) {
+		if ($user->is_salesrep() && DplusWire::wire('pages')->get('/config/')->restrict_allowedcustomers) {
 			$custquery = (new QueryBuilder())->table('custperm')->where('custid', $custID);
 			$permquery = (new QueryBuilder())->table($custquery, 'custpermcust')->field('custid, shiptoid');
 			$permquery->where('loginid', 'in', [$loginID, $SHARED_ACCOUNTS]);
@@ -645,7 +645,7 @@
 		$SHARED_ACCOUNTS = DplusWire::wire('config')->sharedaccounts;
 		$q = (new QueryBuilder())->table('custindex');
 
-		if ($user->get_dplusrole() == DplusWire::wire('config')->roles['sales-rep'] && DplusWire::wire('pages')->get('/config/')->restrict_allowedcustomers)  {
+		if ($user->is_salesrep() && DplusWire::wire('pages')->get('/config/')->restrict_allowedcustomers)  {
 			$custquery = (new QueryBuilder())->table('custperm')->where('custid', $custID);
 			if (!empty($shiptoID)) {
 				$custquery->where('shiptoid', $shiptoID);
@@ -689,7 +689,7 @@
 		$search = QueryBuilder::generate_searchkeyword($query);
 		$q = (new QueryBuilder())->table('custindex');
 
-		if ($user->get_dplusrole() == DplusWire::wire('config')->roles['sales-rep'] && DplusWire::wire('pages')->get('/config/')->restrict_allowedcustomers) {
+		if ($user->is_salesrep() && DplusWire::wire('pages')->get('/config/')->restrict_allowedcustomers) {
 			$custquery = (new QueryBuilder())->table('custperm')->where('custid', $custID);
 			if (!empty($shiptoID)) {
 				$custquery->where('shiptoid', $shiptoID);
@@ -742,15 +742,19 @@
 		}
 	}
 
-	function get_customersalesperson($custID, $shipID, $debug) {
-		$sql = DplusWire::wire('dplusdatabase')->prepare("SELECT splogin1 FROM custindex WHERE custid = :custID AND shiptoid = :shipID LIMIT 1");
-		$switching = array(':custID' => $custID, ':shipID' => $shipID);
-		$withquotes = array(true, true);
+	function get_customersalesperson($custID, $shipID, $debug = false) {
+		$q = (new QueryBuilder())->table('custindex');
+		$q->field('splogin1');
+		$q->where('custid', $custID);
+		$q->where('shiptoid', $shipID);
+		$q->limit(1);
+
+		$sql = DplusWire::wire('dplusdatabase')->prepare($q->render());
 
 		if ($debug) {
-			return returnsqlquery($sql->queryString, $switching, $withquotes);
+			return $q->generate_sqlquery($q->params);
 		} else {
-			$sql->execute($switching);
+			$sql->execute($q->params);
 			return $sql->fetchColumn();
 		}
 	}
@@ -772,7 +776,7 @@
 
 		$q = (new QueryBuilder())->table('custindex');
 
-		if ($user->get_dplusrole() == DplusWire::wire('config')->roles['sales-rep'] && DplusWire::wire('pages')->get('/config/')->restrict_allowedcustomers) {
+		if ($user->is_salesrep() && DplusWire::wire('pages')->get('/config/')->restrict_allowedcustomers) {
 			$custpermquery = (new QueryBuilder())->table('custperm');
 			$custpermquery->field($q->expr('DISTINCT(custid)'));
 			$custpermquery->where('loginid', 'in', [$loginID, $SHARED_ACCOUNTS]);
@@ -800,7 +804,7 @@
 		$q = (new QueryBuilder())->table('custindex');
 		$q->field($q->expr('COUNT(DISTINCT(custid))'));
 
-		if ($user->get_dplusrole() == DplusWire::wire('config')->roles['sales-rep'] && DplusWire::wire('pages')->get('/config/')->restrict_allowedcustomers) {
+		if ($user->is_salesrep() && DplusWire::wire('pages')->get('/config/')->restrict_allowedcustomers) {
 			$custpermquery = (new QueryBuilder())->table('custperm');
 			$custpermquery->field($q->expr('DISTINCT(custid)'));
 			$custpermquery->where('loginid', 'in', [$loginID, $SHARED_ACCOUNTS]);
@@ -834,7 +838,7 @@
 		$search = QueryBuilder::generate_searchkeyword($keyword);
 		$q = (new QueryBuilder())->table('custindex');
 
-		if ($user->get_dplusrole() == DplusWire::wire('config')->roles['sales-rep'] && DplusWire::wire('pages')->get('/config/')->restrict_allowedcustomers) {
+		if ($user->is_salesrep() && DplusWire::wire('pages')->get('/config/')->restrict_allowedcustomers) {
 			$permquery = (new QueryBuilder())->table('custperm');
 			$permquery->field('custid, shiptoid');
 			$permquery->where('loginid', [$loginID, $SHARED_ACCOUNTS]);
@@ -898,7 +902,7 @@
 		$matchexpression = $q->expr("MATCH(custid, shiptoid, name, addr1, addr2, city, state, zip, phone, cellphone, contact, email, typecode, faxnbr, title) AGAINST ([] IN BOOLEAN MODE)", ["'*$query*'"]);
 
 		// CHECK if Users has restrictions by Application Config, then User permissions
-		if ($user->get_dplusrole() == DplusWire::wire('config')->roles['sales-rep'] && DplusWire::wire('pages')->get('/config/')->restrict_allowedcustomers) {
+		if ($user->is_salesrep() && DplusWire::wire('pages')->get('/config/')->restrict_allowedcustomers) {
 			$custpermquery = (new QueryBuilder())->table('custperm')->field('custid, shiptoid')->where('loginid', [$loginID, $SHARED_ACCOUNTS]);
 
 			if (DplusWire::wire('config')->cptechcustomer == 'stempf') {
@@ -2336,15 +2340,6 @@
 		}
 	}
 
-	function nextquotelinenbr($sessionID, $qnbr) {
-		$sql = DplusWire::wire('dplusdatabase')->prepare("SELECT MAX(linenbr) FROM quotdet WHERE sessionid = :sessionID AND quotenbr = :qnbr ");
-		$switching = array(':sessionID' => $sessionID, ':qnbr' => $qnbr); $withquotes = array(true, true);
-		$sql->execute($switching);
-		return intval($sql->fetchColumn()) + 1;
-	}
-
-
-
 	function edit_quotehead($sessionID, $qnbr, Quote $quote, $debug = false) {
 		$originalquote = Quote::load($sessionID, $qnbr);
 		$properties = array_keys($quote->_toArray());
@@ -2415,32 +2410,6 @@
 				$sql->execute($q->params);
 			}
 			return boolval(DplusWire::wire('dplusdatabase')->lastInsertId());
-		}
-	}
-
-	function insert_orderlock($sessionID, $recnbr, $ordn, $userID, $date, $time, $debug) {
-		$sql = DplusWire::wire('dplusdatabase')->prepare("INSERT INTO ordlock (sessionid, recno, date, time, ordernumber, userid) VALUES (:sessionID, :recnbr, :date, :time, :ordernumber, :userID)");
-		$switching = array(':sessionID' => $sessionID, ':recnbr' => $recnbr, ':date' => $time, ':time' => $time, ':ordernumber' => $ordn, ':userID' => $userID);
-		$withquotes = array(true, true, true, true, true, true);
-
-		if ($debug) {
-			return	returnsqlquery($sql->queryString, $switching, $withquotes);
-		} else {
-			$sql->execute($switching);
-			return returnsqlquery($sql->queryString, $switching, $withquotes);
-		}
-	}
-
-	function remove_orderlock($sessionID, $ordn, $userID, $debug) {
-		$sql = DplusWire::wire('dplusdatabase')->prepare("DELETE FROM ordlock WHERE sessionid = :sessionID AND ordernumber = :ordn AND userid = :userID");
-		$switching = array(':sessionID' => $sessionID, ':ordn' => $ordn, ':userID' => $userID);
-		$withquotes = array(true, true, true);
-
-		if ($debug) {
-			return	returnsqlquery($sql->queryString, $switching, $withquotes);
-		} else {
-			$sql->execute($switching);
-			return returnsqlquery($sql->queryString, $switching, $withquotes);
 		}
 	}
 
@@ -2871,7 +2840,7 @@
 		}
 	}
 
-	function edit_useraction(UserAction $updatedaction, $debug = false) {
+	function update_useraction(UserAction $updatedaction, $debug = false) {
 		$originalaction = UserAction::load($updatedaction->id); // (id, bool fetchclass, bool debug)
 		$q = (new QueryBuilder())->table('useractions');
 		$q->mode('update');
@@ -2883,17 +2852,8 @@
 			return $q->generate_sqlquery();
 		} else {
 			$sql->execute($q->params);
-			$success = $sql->rowCount();
-			if ($success) {
-				return array("error" => false,  "sql" => $q->generate_sqlquery($q->params));
-			} else {
-				return array("error" => true,  "sql" => $q->generate_sqlquery($q->params));
-			}
+			return boolval($sql->rowCount());
 		}
-	}
-
-	function update_useraction(UserAction $updatedaction, $debug = false) {
-		return edit_useraction($updatedaction, $debug);
 	}
 
 	function update_useractionlinks(UserAction $oldlinks, UserAction $newlinks, $debug = false) {
@@ -2915,7 +2875,7 @@
 			if ($success) {
 				return array("error" => false,  "sql" => $q->generate_sqlquery($q->params));
 			} else {
-				return array("error" => true,  "sql" => $q->generate_sqlquery($q->params));
+				return boolval($sql->rowCount());
 			}
 		}
 	}
@@ -2930,7 +2890,8 @@
 			return $q->generate_sqlquery($q->params);
 		} else {
 			$sql->execute($q->params);
-			return array('sql' => $q->generate_sqlquery($q->params), 'insertedid' => DplusWire::wire('dplusdatabase')->lastInsertId());
+			$action->set('id', DplusWire::wire('dplusdatabase')->lastInsertId());
+			return boolval(DplusWire::wire('dplusdatabase')->lastInsertId());
 		}
 	}
 
@@ -3019,20 +2980,24 @@
 		}
 	}
 
-	function getvendorshipfroms($vendorID, $debug) {
-		$sql = DplusWire::wire('dplusdatabase')->prepare("SELECT * FROM vendors WHERE vendid = :vendor AND shipfrom != ''");
-		$switching = array(':vendor' => $vendorID); $withquotes = array(true);
+	function get_vendorshipfroms($vendorID, $debug = false) {
+		$q = (new QueryBuilder())->table('vendors');
+		$q->field('shipfrom');
+		$q->where('vendid', $vendorID);
+
+		$sql = DplusWire::wire('dplusdatabase')->prepare($q->render());
+
 		if ($debug) {
-			return returnsqlquery($sql->queryString, $switching, $withquotes);
+			return $q->generate_sqlquery($q->params);
 		} else {
-			$sql->execute($switching);
+			$sql->execute($q->params);
 			return $sql->fetchAll(PDO::FETCH_ASSOC);
 		}
 	}
 
 	function search_vendorspaged($limit = 10, $page = 1, $keyword, $debug) {
 		$q = (new QueryBuilder())->table('vendors');
-		$SHARED_ACCOUNTS = Processwire\wire('config')->sharedaccounts;
+		$SHARED_ACCOUNTS = DplusWire::wire('config')->sharedaccounts;
 		$search = QueryBuilder::generate_searchkeyword($keyword);
 
 		$matchexpression = $q->expr("MATCH(vendid, shipfrom, name, address1, address2, address3, city, state, zip, country, phone, fax, email) AGAINST ([] IN BOOLEAN MODE)", ["'*$keyword*'"]);
@@ -3055,7 +3020,7 @@
 
 	function count_searchvendors($keyword, $debug) {
 		$q = (new QueryBuilder())->table('vendors');
-		$SHARED_ACCOUNTS = Processwire\wire('config')->sharedaccounts;
+		$SHARED_ACCOUNTS = DplusWire::wire('config')->sharedaccounts;
 		$search = QueryBuilder::generate_searchkeyword($keyword);
 
 		$matchexpression = $q->expr("MATCH(vendid, shipfrom, name, address1, address2, address3, city, state, zip, country, phone, fax, email) AGAINST ([] IN BOOLEAN MODE)", ["'*$keyword*'"]);
@@ -3100,11 +3065,19 @@
 		}
 	}
 
-	function get_vendorname($vendorID) {
-		$sql = DplusWire::wire('dplusdatabase')->prepare("SELECT name FROM vendors WHERE vendid = :vendorID LIMIT 1");
-		$switching = array(':vendorID' => $vendorID);
-		$sql->execute($switching);
-		return $sql->fetchColumn();
+	function get_vendorname($vendorID, $debug = false) {
+		$q = (new QueryBuilder())->table('vendors');
+		$q->field('name');
+		$q->where('vendid', $vendorID);
+		$q->limit(1);
+		$sql = DplusWire::wire('dplusdatabase')->prepare($q->render());
+
+		if ($debug) {
+			return $q->generate_sqlquery($q->params);
+		} else {
+			$sql->execute($q->params);
+			return $sql->fetchColumn();
+		}
 	}
 
 /* =============================================================
@@ -3586,7 +3559,7 @@
 		}
 	}
 
-	function edit_orderhead($sessionID, $ordn, SalesOrderEdit $order, $debug = false) {
+	function update_orderhead($sessionID, $ordn, SalesOrderEdit $order, $debug = false) {
 		$orginalorder = SalesOrderEdit::load($sessionID, $ordn);
 		$properties = array_keys($order->_toArray());
 		$q = (new QueryBuilder())->table('ordrhed');
@@ -3654,11 +3627,19 @@
 		}
 	}
 
-	function getshipvias($sessionID) {
-		$sql = DplusWire::wire('dplusdatabase')->prepare("SELECT code, via FROM shipvia WHERE sessionid = :sessionID");
-		$switching = array(':sessionID' => $sessionID); $withquotes = array(true);
-		$sql->execute($switching);
-		return $sql->fetchAll(PDO::FETCH_ASSOC);
+	function get_shipvias($sessionID, $debug = false) {
+		$q = (new QueryBuilder())->table('shipvia');
+		$q->field('code');
+		$q->field('via');
+		$q->where('sessionid', $sessionID);
+		$sql = DplusWire::wire('dplusdatabase')->prepare($q->render());
+
+		if ($debug) {
+			return $q->generate_sqlquery($q->params);
+		} else {
+			$sql->execute($q->params);
+			return $sql->fetchAll(PDO::FETCH_ASSOC);
+		}
 	}
 
 /* =============================================================
@@ -3692,19 +3673,22 @@
 		}
 	}
 
-	function getstates() {
-		$sql = DplusWire::wire('dplusdatabase')->prepare("SELECT abbreviation as state, name FROM states");
-		$sql->execute();
+	function get_states() {
+		$q = (new QueryBuilder())->table('states');
+		$q->field($q->expr("abbreviation AS state"));
+		$q->field('name');
+		$sql = DplusWire::wire('dplusdatabase')->prepare($q->render());
+		$sql->execute($q->params);
 		return $sql->fetchAll(PDO::FETCH_ASSOC);
 	}
 
-	function getcountries() {
-		$sql = DplusWire::wire('dplusdatabase')->prepare("SELECT * FROM countries");
-		$sql->execute();
+	function get_countries() {
+		$q = (new QueryBuilder())->table('countries');
+		$sql = DplusWire::wire('dplusdatabase')->prepare($q->render());
+
+		$sql->execute($q->params);
 		return $sql->fetchAll(PDO::FETCH_ASSOC);
 	}
-
-
 
 /* =============================================================
 	ITEM FUNCTIONS
@@ -4015,7 +3999,7 @@
 			return $q->generate_sqlquery($q->params);
 		} else {
 			$sql->execute($q->params);
-			return array('sql' => $q->generate_sqlquery($q->params), 'success' => $sql->rowCount() ? true : false, 'updated' => $sql->rowCount() ? true : false, 'querytype' => 'update');
+			return boolval($sql->rowCount());
 		}
 	}
 
@@ -4039,7 +4023,7 @@
 			return $q->generate_sqlquery($q->params);
 		} else {
 			$sql->execute($q->params);
-			return array('sql' => $q->generate_sqlquery($q->params), 'success' => DplusWire::wire('dplusdatabase')->lastInsertId() > 0 ? true : false, 'id' => DplusWire::wire('dplusdatabase')->lastInsertId(), 'querytype' => 'create');
+			return boolval(DplusWire::wire('dplusdatabase')->lastInsertId());
 		}
 	}
 
@@ -4064,7 +4048,7 @@
 			return $q->generate_sqlquery($q->params);
 		} else {
 			$sql->execute($q->params);
-			return $sql->fetchColumn();
+			return boolval($sql->fetchColumn());
 		}
 	}
 
@@ -4077,7 +4061,7 @@
 	 */
 	function get_systemconfiguration($userID, $configuration, $debug = false) {
 		$q = (new QueryBuilder())->table('userconfigs');
-		$q->field($q->expr("data"));
+		$q->field("data");
 		$q->where('user', $userID);
 		$q->where('configtype', $config);
 		$q->limit(1);
@@ -4104,7 +4088,7 @@
 			return $q->generate_sqlquery($q->params);
 		} else {
 			$sql->execute($q->params);
-			return $sql->fetchColumn();
+			return boolval($sql->fetchColumn());
 		}
 	}
 
@@ -4149,7 +4133,7 @@
 			return $q->generate_sqlquery($q->params);
 		} else {
 			$sql->execute($q->params);
-			return array('sql' => $q->generate_sqlquery($q->params), 'success' => DplusWire::wire('dplusdatabase')->lastInsertId() > 0 ? true : false, 'id' => DplusWire::wire('dplusdatabase')->lastInsertId(), 'querytype' => 'create');
+			return boolval(DplusWire::wire('dplusdatabase')->lastInsertId());
 		}
 	}
 
@@ -4202,7 +4186,7 @@
 		$q->field('COUNT(*)');
 		$q->where('bookdate', date('Ymd'));
 
-		if ($user->get_dplusrole() == DplusWire::wire('config')->roles['sales-rep']) {
+		if ($user->is_salesrep()) {
 			$q->where('salesperson1', DplusWire::wire('user')->salespersonid);
 		}
 
@@ -4238,7 +4222,7 @@
 		$q->field('SUM(netamount)');
 		$q->where('bookdate', date('Ymd'));
 
-		if ($user->get_dplusrole() == DplusWire::wire('config')->roles['sales-rep']) {
+		if ($user->is_salesrep()) {
 			$q->where('salesperson1', DplusWire::wire('user')->salespersonid);
 		}
 
@@ -4273,7 +4257,7 @@
 		$user = LogmUser::load($loginID);
 		$q = (new QueryBuilder())->table('bookingr');
 
-		if ($user->get_dplusrole() == DplusWire::wire('config')->roles['sales-rep']) {
+		if ($user->is_salesrep()) {
 			$q->where('salesrep', DplusWire::wire('user')->salespersonid);
 		}
 
@@ -4315,7 +4299,7 @@
 		$user = LogmUser::load($loginID);
 		$q = (new QueryBuilder())->table('bookingc');
 
-		if ($user->get_dplusrole() == DplusWire::wire('config')->roles['sales-rep']) {
+		if ($user->is_salesrep()) {
 			$q->where('salesrep', DplusWire::wire('user')->salespersonid);
 		}
 
@@ -4363,7 +4347,7 @@
 
 		$q->where('bookdate', date('Ymd', strtotime($date)));
 
-		if ($user->get_dplusrole() == DplusWire::wire('config')->roles['sales-rep']) {
+		if ($user->is_salesrep()) {
 			$q->where('salesperson1', DplusWire::wire('user')->salespersonid);
 		}
 
@@ -4403,7 +4387,7 @@
 		$q->field('shiptoid');
 		$q->where('bookdate', date('Ymd', strtotime($date)));
 
-		if ($user->get_dplusrole() == DplusWire::wire('config')->roles['sales-rep']) {
+		if ($user->is_salesrep()) {
 			$q->where('salesperson1', DplusWire::wire('user')->salespersonid);
 		}
 
@@ -4443,7 +4427,7 @@
 		$q->where('bookdate', date('Ymd', strtotime($date)));
 		$q->where('salesordernbr', $ordn);
 
-		if ($user->get_dplusrole() == DplusWire::wire('config')->roles['sales-rep']) {
+		if ($user->is_salesrep()) {
 			$q->where('salesperson1', DplusWire::wire('user')->salespersonid);
 		}
 
@@ -4501,7 +4485,7 @@
 			$q->where('shiptoid', $shipID);
 		}
 
-		if ($user->get_dplusrole() == DplusWire::wire('config')->roles['sales-rep']) {
+		if ($user->is_salesrep()) {
 			$q->where('salesrep', DplusWire::wire('user')->salespersonid);
 		}
 		$q->generate_filters($filter, $filterable);
@@ -4545,7 +4529,7 @@
 		$q->field('bookdate');
 		$q->where('bookdate', date('Ymd', strtotime($date)));
 
-		if ($user->get_dplusrole() == DplusWire::wire('config')->roles['sales-rep']) {
+		if ($user->is_salesrep()) {
 			$q->where('salesperson1', DplusWire::wire('user')->salespersonid);
 		}
 
@@ -4581,7 +4565,7 @@
 
 		$q->where('bookdate', date('Ymd', strtotime($date)));
 
-		if ($user->get_dplusrole() == DplusWire::wire('config')->roles['sales-rep']) {
+		if ($user->is_salesrep()) {
 			$q->where('salesperson1', DplusWire::wire('user')->salespersonid);
 		}
 
@@ -4617,7 +4601,7 @@
 		$q->field('COUNT(*)');
 		$q->where('bookdate', date('Ymd'));
 
-		if ($user->get_dplusrole() == DplusWire::wire('config')->roles['sales-rep']) {
+		if ($user->is_salesrep()) {
 			$q->where('salesrep', DplusWire::wire('user')->salespersonid);
 		}
 
@@ -4653,7 +4637,7 @@
 
 		$q->where('bookdate', date('Ymd'));
 
-		if ($user->get_dplusrole() == DplusWire::wire('config')->roles['sales-rep']) {
+		if ($user->is_salesrep()) {
 			$q->where('salesrep', DplusWire::wire('user')->salespersonid);
 		}
 
@@ -4706,7 +4690,7 @@
 		$user = LogmUser::load($loginID);
 		$q = (new QueryBuilder())->table('bookingc');
 
-		if ($user->get_dplusrole() == DplusWire::wire('config')->roles['sales-rep']) {
+		if ($user->is_salesrep()) {
 			$q->where('salesrep', DplusWire::wire('user')->salespersonid);
 		}
 
@@ -5297,6 +5281,26 @@
 	}
 
 	/**
+	 * Returns an array of InventorySearchItem of invsearch results
+	 * @param  string $sessionID Session Identifier
+	 * @param  bool   $debug     Run in debug? If so, return SQL Query
+	 * @return array            Array of InventorySearchItem
+	 */
+	function count_invsearchitems_distinct_itemid($sessionID, $debug = false) {
+		$q = (new QueryBuilder())->table('invsearch');
+		$q->field($q->expr('COUNT(DISTINCT(itemid))'));
+		$q->where('sessionid', $sessionID);
+		$sql = DplusWire::wire('dplusdatabase')->prepare($q->render());
+
+		if ($debug) {
+			return $q->generate_sqlquery($q->params);
+		} else {
+			$sql->execute($q->params);
+			return $sql->fetchColumn();
+		}
+	}
+
+	/**
 	 * Returns the Number of Results for this session and item id
 	 * // NOTE COUNTING THE DISTINCT XREF ITEMID solves an issue where
 	 *         the item is the exact same, it's just an item with the same ITEMID / LOT SERIAL from different X-refs
@@ -5384,6 +5388,27 @@
 		$q = (new QueryBuilder())->table('invsearch');
 		$q->where('sessionid', $sessionID);
 		$q->group('itemid, xorigin');
+		$sql = DplusWire::wire('dplusdatabase')->prepare($q->render());
+
+		if ($debug) {
+			return $q->generate_sqlquery($q->params);
+		} else {
+			$sql->execute($q->params);
+			$sql->setFetchMode(PDO::FETCH_CLASS, 'InventorySearchItem');
+			return $sql->fetchAll();
+		}
+	}
+
+	/**
+	 * Returns an array of InventorySearchItem of invsearch results
+	 * @param  string $sessionID Session Identifier
+	 * @param  bool   $debug     Run in debug? If so, return SQL Query
+	 * @return array            Array of InventorySearchItem
+	 */
+	function get_invsearchitems_distinct_itemid($sessionID, $debug = false) {
+		$q = (new QueryBuilder())->table('invsearch');
+		$q->where('sessionid', $sessionID);
+		$q->group('itemid');
 		$sql = DplusWire::wire('dplusdatabase')->prepare($q->render());
 
 		if ($debug) {
