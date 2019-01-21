@@ -8,7 +8,9 @@
 	// Set up filename and sessionID in case this was made through cURL
 	$filename = ($input->$requestmethod->sessionID) ? $input->$requestmethod->text('sessionID') : session_id();
 	$sessionID = ($input->$requestmethod->sessionID) ? $input->$requestmethod->text('sessionID') : session_id();
-
+	
+	$itemID = $input->$requestmethod->text('itemID');
+	
 	/**
 	* PRODUCT REDIRECT
 	* @param string $action
