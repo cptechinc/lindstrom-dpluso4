@@ -21,7 +21,6 @@
 	*
 	* switch ($action) {
 	* 	case 'add-customer':
-	* 		- Creates a new Customer
 	* 		DBNAME=$config->dplusdbname
 	* 		NEWCUSTOMER
 	*		BILLTONAME=$customer-name
@@ -62,7 +61,6 @@
 	*		NOTES=
 	*		break;
 	* 	case 'load-new-customer':
-	* 		- Loads the new Customer and redirects to their page by their new ID
 	*		DBNAME=$config->dplusdbname
 	*		CUSTID=$custID
 	*		break;
@@ -71,14 +69,12 @@
 	*		CUSTID=$custID
 	*		break;
 	*	case 'shop-as-customer':
-	*		- Defines the Shopping Cart Customer
 	*		DBNAME=$config->dplusdbname
 	*		CARTCUST
 	*		CUSTID=$custID
 	*		SHIPID=$shipID
 	*		break;
 	*	case 'add-contact':
-	*		- Adds a contact for Customer / Customer Ship to
 	*		DBNAME=$config->dplusdbname
 	*		ADDCONTACT
 	*		CUSTID=$custID
