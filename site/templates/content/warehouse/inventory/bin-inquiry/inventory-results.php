@@ -12,6 +12,11 @@
 	<?php include __DIR__."/bin-form.php"; ?>
 </div>
 <?php if ($input->get->binID) : ?>
+	<?php if (!$whseconfig->validate_bin($binID)) : ?>
+		<div class="alert alert-danger" role="alert">
+			<strong>Warning! </strong> This bin (<?= $binID; ?>) is invalid accoring to your Warehouse Bin Configuration
+		</div>
+	<?php endif; ?>
 	<h3><?= $title; ?></h3>
 	<div class="list-group">
 		<?php if ($resultscount) : ?>
@@ -35,7 +40,7 @@
 											<div class="list-group-item">
 												<div class="row">
 													<div class="col-xs-12">
-														<h4 class="list-group-item-heading"><?= strtoupper($lotserial->get_itemtypepropertydesc()) . " " . $lotserial->get_itemidentifier(); ?></h4>
+														<h4 class="list-group-item-heading"><?= strtoupper($lotserial->get_itemtypepropertydesc()) . ": " . $lotserial->get_itemidentifier(); ?></h4>
 														<p class="list-group-item-text bg-info"><strong>Bin:</strong> <?= $lotserial->bin; ?> <strong>Qty:</strong> <?= $lotserial->qty; ?></p>
 													</div>
 												</div>

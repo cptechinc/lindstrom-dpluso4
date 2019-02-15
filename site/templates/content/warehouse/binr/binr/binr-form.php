@@ -4,7 +4,7 @@
 		<?php if (!empty($session->get('binr'))) : ?>
 			<?php if ($whsesession->had_succeeded()) : ?>
 				<div class="alert alert-success" role="alert">
-					<strong>Success:</strong> <?= strtoupper($item->get_itemtypepropertydesc()) . " ". $item->get_itemidentifier(); ?> has been moved
+					<strong>Success:</strong> <?= strtoupper($item->get_itemtypepropertydesc()) . ": ". $item->get_itemidentifier(); ?> has been moved
 				</div>
 				<a href="<?= $page->parent->url; ?>" class="btn btn-primary not-round"><?= $page->parent->title; ?> Menu</a>
 			<?php elseif (!empty($whsesession->status)) : ?>
@@ -43,7 +43,7 @@
 						<div class="input-group">
 							<input type="text" class="form-control input-sm" name="to-bin" value="<?= isset($tobin) ? $tobin : ''; ?>">
 							<span class="input-group-btn">
-								<button type="button" class="btn btn-sm btn-default show-possible-bins" data-input="to-bin"> <span class="fa fa-search"></span> </button>
+								<button type="button" class="btn btn-sm btn-default" data-toggle="modal" data-target="#choose-to-bins-modal" data-input="to-bin"> <span class="fa fa-search"></span> </button>
 							</span>
 						</div>
 					</div>
@@ -68,6 +68,7 @@
 		</form>
 	</div>
 </div>
+<?php include __DIR__ . '/to-bins-modal.php'; ?>
 <?php include "{$config->paths->content}warehouse/session.js.php"; ?>
 <script>
 	var validfrombins = <?= json_encode(ItemBinInfo::get_find_by_itemjsarray(session_id(), $item)); ?>
